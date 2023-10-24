@@ -11,22 +11,77 @@ Replace this with a description of the program.
 """
 import utils
 
+
+def check_text_length(text):
+    """Error handling function for cipers 
+    """
+
+    if len(text) > 0:
+        return True
+
+    raise ValueError('The given text not contains any charachter')
+
+
+def check_upper_case(text):
+    """Uppercase check function
+    """
+
+    if text.isupper():
+        return True
+
+    raise ValueError('The given text contains lowercase charachters')
+
+def is_alphabetic(text):
+    """Check if the text is contains only alphabetic characters
+    """
+
+    if text.isalpha():
+        return True
+
+    raise ValueError('The given text contains non-alphabetic charachters')
+
 # Caesar Cipher
 
-def encrypt_caesar(plaintext):
+def encrypt_caesar(plaintext, shifting):
     """Encrypt plaintext using a Caesar cipher.
 
     Add more implementation details here.
     """
-    raise NotImplementedError  # Your implementation here
 
+    try:
+        if check_text_length(plaintext) and check_upper_case(plaintext):
+            result = ''
+            for letter in plaintext:
+                if letter.isalpha():
+                    charachter = chr((ord(letter) + shifting - ord('A')) % 26 + ord('A'))
+                    result += charachter
+                else:
+                    result += letter
 
-def decrypt_caesar(ciphertext):
+            return result
+
+    except ValueError as e:
+        print(e)
+
+def decrypt_caesar(ciphertext, shifting):
     """Decrypt a ciphertext using a Caesar cipher.
 
     Add more implementation details here.
     """
-    raise NotImplementedError  # Your implementation here
+    try:
+        if check_text_length(ciphertext) and check_upper_case(ciphertext):
+            result = ''
+
+            for letter in ciphertext:
+                    if letter.isalpha():
+                        charachter = chr((ord(letter) - shifting - ord('A')) % 26 + ord('A'))
+                        result += charachter
+                    else:
+                        result += letter
+
+            return result
+    except ValueError as e:
+        print(e)
 
 
 # Vigenere Cipher
@@ -36,7 +91,29 @@ def encrypt_vigenere(plaintext, keyword):
 
     Add more implementation details here.
     """
-    raise NotImplementedError  # Your implementation here
+    try:
+        is_alphabetic(plaintext)
+        is_alphabetic(keyword)
+        check_text_length(plaintext)
+        check_text_length(keyword)
+        check_upper_case(plaintext)
+        check_upper_case(keyword)
+
+        result = ''
+        keyword_len = len(keyword)
+
+        for i, letter in enumerate(plaintext): 
+            shift_character = keyword[i % keyword_len]
+            shift_number = ord(shift_character) - ord('A')
+
+            result_charachter = chr((ord(letter) + shift_number - ord('A')) % 26 + ord('A'))
+
+            result += result_charachter
+
+        return result
+
+    except ValueError as e:
+        print(e)
 
 
 def decrypt_vigenere(ciphertext, keyword):
@@ -61,8 +138,9 @@ def generate_private_key(n=8):
     3. Discover an integer `r` between 2 and q that is coprime to `q` (you can use utils.coprime)
 
     You'll need to use the random module for this function, which has been imported already
-
-    Somehow, you'll have to return all of these values out of this function! Can we do that in Python?!
+    
+    Somehow, you'll have to return all of these values out of this function! 
+    Can we do that in Python?!
 
     @param n bitsize of message to send (default 8)
     @type n int
@@ -127,4 +205,3 @@ def decrypt_mh(message, private_key):
     @return bytearray or str of decrypted characters
     """
     raise NotImplementedError  # Your implementation here
-
