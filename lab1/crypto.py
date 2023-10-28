@@ -166,8 +166,8 @@ def encrypt_scytale(plaintext: str | bytes, circumference: int) -> str | bytes:
                 plaintext += num_of_char * additional_charachter
 
         columns = [plaintext[i:(i+circumference)] for i in range(0, len(plaintext), circumference)]
-
-        ciper_text = [column[i] for i in range(0, circumference) for column in columns]
+  
+        ciper_text = [bytes([column[i]]) for i in range(0, circumference) for column in columns]
 
         if isinstance(plaintext, bytes):
             return b''.join(ciper_text)
@@ -183,7 +183,7 @@ def decrypt_scytale(cipertext: str | bytes, circumference: int) -> str | bytes:
     separator = len(cipertext) // circumference
     rows = [cipertext[i:(i+separator)] for i in range(0, len(cipertext), separator)]
 
-    plaintext = [row[i] for i in range(0, separator) for row in rows]
+    plaintext = [bytes([row[i]]) for i in range(0, separator) for row in rows]
 
     if isinstance(cipertext, bytes):
         return b''.join(plaintext).strip()
