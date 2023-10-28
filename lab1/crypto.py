@@ -4,100 +4,110 @@ File: crypto.py
 ---------------
 Assignment 1: Cryptography
 Course: CS 41
-Name: <YOUR NAME>
-SUNet: <SUNet ID>
+Name: Jako Daniel
+SUNet: jdim2141
 
 Replace this with a description of the program.
 """
 import utils
 
 
-def check_text_length(text):
+def check_text_length(text: str) -> None:
     """Error handling function for cipers 
     """
 
     if len(text) > 0:
-        return True
+        return
 
     raise ValueError('The given text not contains any charachter')
 
 
-def check_upper_case(text):
+def check_upper_case(text: str) -> None:
     """Uppercase check function
     """
 
     if text.isupper():
-        return True
+        return
 
     raise ValueError('The given text contains lowercase charachters')
 
-def is_alphabetic(text):
+
+def is_alphabetic(text: str) -> None:
     """Check if the text is contains only alphabetic characters
+
     """
 
     if text.isalpha():
-        return True
+        return
 
     raise ValueError('The given text contains non-alphabetic charachters')
 
-# Caesar Cipher
 
-def encrypt_caesar(plaintext, shifting):
-    """Encrypt plaintext using a Caesar cipher.
+def validate(text: str) -> bool:
+    """Make all validation constraints
 
-    Add more implementation details here.
     """
 
-    try:
-        if check_text_length(plaintext) and check_upper_case(plaintext):
-            result = ''
-            for letter in plaintext:
-                if letter.isalpha():
-                    charachter = chr((ord(letter) + shifting - ord('A')) % 26 + ord('A'))
-                    result += charachter
-                else:
-                    result += letter
+    if not text.isalpha():
+        raise ValueError('The given text contains non-alphabetic charachters')
 
-            return result
+    if not text.isupper():
+        raise ValueError('The given text contains lowercase charachters')
+
+    if len(text) == 0:
+        raise ValueError('The given text is empty')
+
+    return True
+
+
+def shift_letter(letter: str, shifting: int) -> str:
+
+    return chr((ord(letter) + shifting - ord('A')) % 26 + ord('A'))
+
+
+# Caesar Cipher
+def encrypt_caesar(plaintext: str) -> str:
+    """Encrypt plaintext using a Caesar cipher.
+    The encyption is implemented with 3 shifting
+    """
+    shifting = 3
+    try:
+        check_text_length(plaintext)
+        check_upper_case(plaintext)
+
+        res = [letter if not letter.isalpha() else shift_letter(letter, shifting) for letter in plaintext]
+
+        return ''.join(res)
 
     except ValueError as e:
         print(e)
 
-def decrypt_caesar(ciphertext, shifting):
+
+def decrypt_caesar(ciphertext: str) -> str:
     """Decrypt a ciphertext using a Caesar cipher.
-
-    Add more implementation details here.
+    Caesar decryption is using 3 shifting
     """
+    shifting = 3
     try:
-        if check_text_length(ciphertext) and check_upper_case(ciphertext):
-            result = ''
+        check_text_length(ciphertext)
+        check_upper_case(ciphertext)
 
-            for letter in ciphertext:
-                    if letter.isalpha():
-                        charachter = chr((ord(letter) - shifting - ord('A')) % 26 + ord('A'))
-                        result += charachter
-                    else:
-                        result += letter
+        res = [letter if not letter.isalpha() else shift_letter(letter, -shifting) for letter in ciphertext]
 
-            return result
+        return ''.join(res)
+
     except ValueError as e:
         print(e)
 
 
 # Vigenere Cipher
 
-def encrypt_vigenere(plaintext, keyword):
+def encrypt_vigenere(plaintext: str, keyword: str) -> str:
     """Encrypt plaintext using a Vigenere cipher with a keyword.
-
-    Add more implementation details here.
     """
     try:
-        is_alphabetic(plaintext)
-        is_alphabetic(keyword)
-        check_text_length(plaintext)
-        check_text_length(keyword)
-        check_upper_case(plaintext)
-        check_upper_case(keyword)
+        validate(plaintext)
+        validate(keyword)
 
         result = ''
         keyword_len = len(keyword)
@@ -106,7 +116,7 @@ def encrypt_vigenere(plaintext, keyword):
             shift_character = keyword[i % keyword_len]
             shift_number = ord(shift_character) - ord('A')
 
-            result_charachter = chr((ord(letter) + shift_number - ord('A')) % 26 + ord('A'))
+            result_charachter = shift_letter(letter, shift_number)
 
             result += result_charachter
 
@@ -116,16 +126,120 @@ def encrypt_vigenere(plaintext, keyword):
         print(e)
 
 
-def decrypt_vigenere(ciphertext, keyword):
+def decrypt_vigenere(ciphertext: str, keyword: str) -> str:
     """Decrypt ciphertext using a Vigenere cipher with a keyword.
-
-    Add more implementation details here.
     """
-    raise NotImplementedError  # Your implementation here
+
+    try:
+        validate(ciphertext)
+        validate(keyword)
+
+        result = ''
+        keyword_len = len(keyword)
+
+        for i, letter in enumerate(ciphertext):
+            shift_character = keyword[i % keyword_len]
+            shift_number = ord(shift_character) - ord('A')
+
+            result_charachter = shift_letter(letter, -shift_number)
+
+            result += result_charachter
+
+        return result
+
+    except ValueError as e:
+        print(e)
+
+
+def encrypt_scytale(plaintext: str | bytes, circumference: int) -> str | bytes:
+    """Encrypt plaintext using Scytale Cipher
+    """
+
+    try:
+        if len(plaintext) % circumference:
+            num_of_char = circumference - (len(plaintext) % circumference)
+            if isinstance(plaintext, bytes):
+                additional_charachter = b' '
+                plaintext += num_of_char * additional_charachter
+            else:
+                additional_charachter = ' '
+                plaintext += num_of_char * additional_charachter
+
+        columns = [plaintext[i:(i+circumference)] for i in range(0, len(plaintext), circumference)]
+
+        ciper_text = [column[i] for i in range(0, circumference) for column in columns]
+
+        if isinstance(plaintext, bytes):
+            return b''.join(ciper_text)
+        return ''.join(ciper_text)
+
+    except ValueError as e:
+        print(e)
+
+
+def decrypt_scytale(cipertext: str | bytes, circumference: int) -> str | bytes:
+    """Decrypt cipertext using Scytale Cipher
+    """
+    separator = len(cipertext) // circumference
+    rows = [cipertext[i:(i+separator)] for i in range(0, len(cipertext), separator)]
+
+    plaintext = [row[i] for i in range(0, separator) for row in rows]
+
+    if isinstance(cipertext, bytes):
+        return b''.join(plaintext).strip()
+    return ''.join(plaintext).strip()
+
+
+def encrypt_railfence(plaintext: str, circumference: int) -> str:
+    """Encrypt plain text using Railfence Cipher
+    """
+
+    ciphertext = ['' for _ in range(circumference)]
+
+    row = 0
+    direction = 1
+    for letter in plaintext:
+        ciphertext[row] += letter
+
+        if row == 0:
+            direction = 1
+        elif row == circumference:
+            direction = -1
+
+        row += direction
+
+    return ''.join(ciphertext)
+
+
+def decrypt_railfence(ciphertext: str, circumference: int) -> str:
+    """Decrypt plain text using Railfence Cipher
+    """
+
+    plaintext = ['' for _ in range(len(ciphertext))]
+
+    index_in_cipher = 0
+    for row in range(1, circumference+1):
+        index = row - 1
+        while index < len(ciphertext):
+            if circumference == row:
+                plaintext[index] = ciphertext[index_in_cipher]
+                index_in_cipher += 1
+                index += (circumference + 1)
+
+            elif index == row - 1:
+                plaintext[index] = ciphertext[index_in_cipher]
+                index_in_cipher += 1
+                index += 2*(circumference - row)
+
+            else:
+                plaintext[index] = ciphertext[index_in_cipher]
+                index_in_cipher += 1
+                index += 2*(circumference - row)
+
+    return ''.join(plaintext)
 
 
 # Merkle-Hellman Knapsack Cryptosystem
-
 def generate_private_key(n=8):
     """Generate a private key for use in the Merkle-Hellman Knapsack Cryptosystem.
 
@@ -148,6 +262,7 @@ def generate_private_key(n=8):
     @return 3-tuple `(w, q, r)`, with `w` a n-tuple, and q and r ints.
     """
     raise NotImplementedError  # Your implementation here
+
 
 def create_public_key(private_key):
     """Create a public key corresponding to the given private key.
@@ -185,6 +300,7 @@ def encrypt_mh(message, public_key):
     @return list of ints representing encrypted bytes
     """
     raise NotImplementedError  # Your implementation here
+
 
 def decrypt_mh(message, private_key):
     """Decrypt an incoming message using a private key
