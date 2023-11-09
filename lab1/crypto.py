@@ -229,11 +229,6 @@ def decrypt_railfence(ciphertext: str, circumference: int) -> str:
                 index_in_cipher += 1
                 index += (circumference + 1)
 
-            elif index == row - 1:
-                plaintext[index] = ciphertext[index_in_cipher]
-                index_in_cipher += 1
-                index += 2*(circumference - row)
-
             else:
                 plaintext[index] = ciphertext[index_in_cipher]
                 index_in_cipher += 1
