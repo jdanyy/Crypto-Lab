@@ -196,7 +196,6 @@ def decrypt_scytale(cipertext: str | bytes, circumference: int) -> str | bytes:
 def encrypt_railfence(plaintext: str, circumference: int) -> str:
     """Encrypt plain text using Railfence Cipher
     """
-
     ciphertext = ['' for _ in range(circumference)]
 
     row = 0
@@ -220,20 +219,25 @@ def decrypt_railfence(ciphertext: str, circumference: int) -> str:
 
     plaintext = ['' for _ in range(len(ciphertext))]
 
-    index_in_cipher = 0
-    for row in range(1, circumference+1):
-        index = row - 1
-        while index < len(ciphertext):
-            if circumference == row:
-                plaintext[index] = ciphertext[index_in_cipher]
-                index_in_cipher += 1
-                index += (circumference + 1)
+    plaintext_len = len(ciphertext)
 
-            else:
-                plaintext[index] = ciphertext[index_in_cipher]
-                index_in_cipher += 1
-                index += 2*(circumference - row)
+    index_in_plain = 0
 
+    row = 0
+    for (i, letter) in enumerate(ciphertext):
+
+        if index_in_plain >= (plaintext_len - row):
+            row += 1
+            plaintext[row] = ciphertext[i]
+            index_in_plain = row
+
+        plaintext[index_in_plain] = ciphertext[i]
+        step = 2*(circumference - row) - 2
+        if step == 0:
+            step = 2*circumference - 2
+
+        index_in_plain += step
+        
     return ''.join(plaintext)
 
 
