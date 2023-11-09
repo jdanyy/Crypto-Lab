@@ -151,7 +151,7 @@ def run_scytale():
 
     print("{}crypting {} using Scytale cipher and circumference {}...".format('En' if encrypting else 'De',
                                                                               data,
-                                                                              circumference)
+                                                                              int(circumference))
           )
 
     output = (encrypt_scytale if encrypting else decrypt_scytale)(data, int(circumference))

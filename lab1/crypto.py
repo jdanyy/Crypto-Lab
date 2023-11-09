@@ -162,15 +162,16 @@ def encrypt_scytale(plaintext: str | bytes, circumference: int) -> str | bytes:
                 additional_charachter = b' '
                 plaintext += num_of_char * additional_charachter
             else:
-                additional_charachter = ' '
+                additional_charachter = ''
                 plaintext += num_of_char * additional_charachter
 
         columns = [plaintext[i:(i+circumference)] for i in range(0, len(plaintext), circumference)]
-  
-        ciper_text = [bytes([column[i]]) for i in range(0, circumference) for column in columns]
 
         if isinstance(plaintext, bytes):
+            ciper_text = [bytes([column[i]]) for i in range(0, circumference) for column in columns]
             return b''.join(ciper_text)
+
+        ciper_text = [column[i] for i in range(0, circumference) for column in columns]
         return ''.join(ciper_text)
 
     except ValueError as e:
@@ -181,12 +182,14 @@ def decrypt_scytale(cipertext: str | bytes, circumference: int) -> str | bytes:
     """Decrypt cipertext using Scytale Cipher
     """
     separator = len(cipertext) // circumference
+    print(separator)
     rows = [cipertext[i:(i+separator)] for i in range(0, len(cipertext), separator)]
 
-    plaintext = [bytes([row[i]]) for i in range(0, separator) for row in rows]
-
     if isinstance(cipertext, bytes):
+        plaintext = [bytes([row[i]]) for i in range(0, separator) for row in rows]
         return b''.join(plaintext).strip()
+
+    plaintext = [row[i] for i in range(0, separator) for row in rows]
     return ''.join(plaintext).strip()
 
 
@@ -203,7 +206,7 @@ def encrypt_railfence(plaintext: str, circumference: int) -> str:
 
         if row == 0:
             direction = 1
-        elif row == circumference:
+        elif row == circumference - 1:
             direction = -1
 
         row += direction
