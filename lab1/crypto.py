@@ -10,6 +10,7 @@ SUNet: jdim2141
 Replace this with a description of the program.
 """
 import utils
+import math
 
 
 def check_text_length(text: str) -> None:
@@ -156,22 +157,35 @@ def encrypt_scytale(plaintext: str | bytes, circumference: int) -> str | bytes:
     """
 
     try:
-        if len(plaintext) % circumference:
-            num_of_char = circumference - (len(plaintext) % circumference)
-            if isinstance(plaintext, bytes):
-                additional_charachter = b' '
-                plaintext += num_of_char * additional_charachter
-            else:
-                additional_charachter = ''
-                plaintext += num_of_char * additional_charachter
+        is_incomplet = len(plaintext) % circumference
+        complet_line_nr = len(plaintext) // circumference
 
-        columns = [plaintext[i:(i+circumference)] for i in range(0, len(plaintext), circumference)]
+        if is_incomplet == 0:
+            step_complet = step_incomplet = len(plaintext) // circumference
+        else:
+            step_complet = circumference
+            step_incomplet = is_incomplet
+
+        rows = [plaintext[i:(i+step_complet)] for i in range(0, step_complet * complet_line_nr, step_complet)]
+
+        if is_incomplet:
+            plaintext = plaintext[(step_complet * complet_line_nr):]
+
+            incomplet_rows = [plaintext[i:(i+step_incomplet)] for i in range(0, len(plaintext), step_incomplet)]
+            [rows.append(row) for row in incomplet_rows]
 
         if isinstance(plaintext, bytes):
-            ciper_text = [bytes([column[i]]) for i in range(0, circumference) for column in columns]
+            ciper_text = [bytes([column[i]]) for i in range(0, step_incomplet) for column in rows]
+            if is_incomplet:
+                [ciper_text.append(bytes([row[i]]))
+                 for i in range(step_incomplet, step_complet) for row in rows[:complet_line_nr]]
             return b''.join(ciper_text)
 
-        ciper_text = [column[i] for i in range(0, circumference) for column in columns]
+        ciper_text = [column[i] for i in range(0, step_incomplet) for column in rows]
+        if is_incomplet:
+            [ciper_text.append(column[i])
+             for i in range(step_incomplet, step_complet) for column in rows[:complet_line_nr]]
+
         return ''.join(ciper_text)
 
     except ValueError as e:
@@ -181,16 +195,44 @@ def encrypt_scytale(plaintext: str | bytes, circumference: int) -> str | bytes:
 def decrypt_scytale(cipertext: str | bytes, circumference: int) -> str | bytes:
     """Decrypt cipertext using Scytale Cipher
     """
-    separator = len(cipertext) // circumference
-    print(separator)
-    rows = [cipertext[i:(i+separator)] for i in range(0, len(cipertext), separator)]
+    plaintext = ['' for _ in range(len(cipertext))]
+
+    binary = False
+    if isinstance(cipertext, bytes):
+        binary = True
+        plaintext = [b'' for _ in range(len(cipertext))]
+
+    if len(cipertext) % circumference == 0:
+        step_complet = step_incomplet = len(cipertext) / circumference
+    else:
+        step_complet = math.ceil(len(cipertext) / circumference)
+        step_incomplet = math.floor(len(cipertext) / circumference)
+
+    complet_rows_nr = len(cipertext) % circumference
+
+    rows = [cipertext[i:(i+step_complet)] for i in range(0, step_complet * complet_rows_nr, step_complet)]
+
+    if len(cipertext) % circumference != 0:
+        cipertext = cipertext[(step_complet * complet_rows_nr):]
+
+        in_complet_rows = [cipertext[i:(i+step_incomplet)] for i in range(0, len(cipertext), step_incomplet)]
+
+        [rows.append(row) for row in in_complet_rows]
+
+    for index, row in enumerate(rows):
+
+        index_in_plain = index
+        for letter in row:
+            if binary:
+                plaintext[index_in_plain] = bytes([letter])
+            else:
+                plaintext[index_in_plain] = letter
+            index_in_plain += circumference
 
     if isinstance(cipertext, bytes):
-        plaintext = [bytes([row[i]]) for i in range(0, separator) for row in rows]
-        return b''.join(plaintext).strip()
+        return b''.join(plaintext)
 
-    plaintext = [row[i] for i in range(0, separator) for row in rows]
-    return ''.join(plaintext).strip()
+    return ''.join(plaintext)
 
 
 def encrypt_railfence(plaintext: str, circumference: int) -> str:
@@ -224,19 +266,28 @@ def decrypt_railfence(ciphertext: str, circumference: int) -> str:
     index_in_plain = 0
 
     row = 0
-    for (i, letter) in enumerate(ciphertext):
-
+    i = 0
+    while i < len(ciphertext):
         if index_in_plain >= (plaintext_len - row):
             row += 1
-            plaintext[row] = ciphertext[i]
             index_in_plain = row
-
         plaintext[index_in_plain] = ciphertext[i]
-        step = 2*(circumference - row) - 2
-        if step == 0:
-            step = 2*circumference - 2
+        i = i + 1
+
+        if row == 0 or row == circumference - 1:
+            step = 2 * circumference - 2
+        else:
+            step = 2*(circumference - row) - 2
 
         index_in_plain += step
+
+        if row != 0 and row != circumference - 1:
+            print(index_in_plain, ciphertext[i])
+            plaintext[index_in_plain] = ciphertext[i]
+            next_index = index_in_plain + 2 * row
+            i += 1
+
+            index_in_plain = next_index
         
     return ''.join(plaintext)
 
