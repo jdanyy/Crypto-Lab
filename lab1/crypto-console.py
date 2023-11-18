@@ -11,6 +11,8 @@ import random
 
 from crypto import (encrypt_caesar, decrypt_caesar,
                     encrypt_vigenere, decrypt_vigenere,
+                    encrypt_scytale, decrypt_scytale,
+                    encrypt_railfence, decrypt_railfence,
                     generate_private_key, create_public_key,
                     encrypt_mh, decrypt_mh)
 
@@ -21,7 +23,7 @@ from crypto import (encrypt_caesar, decrypt_caesar,
 
 def get_tool():
     print("* Tool *")
-    return _get_selection("(C)aesar, (V)igenere or (M)erkle-Hellman? ", "CVM")
+    return _get_selection("(C)aesar, (V)igenere, (M)erkle-Hellman, (S)cytale or (R)ailfence? ", "CVMSR")
 
 
 def get_action():
@@ -35,6 +37,13 @@ def get_filename():
     while not filename:
         filename = input("Filename? ")
     return filename
+
+
+def is_binary_file():
+    print("* Input type *")
+    choice = _get_selection("(B)inary or (P)lain? ", options="BP")
+
+    return True if choice == 'B' else False
 
 
 def get_input(binary=False):
@@ -131,6 +140,44 @@ def run_vigenere():
     set_output(output)
 
 
+def run_scytale():
+    action = get_action()
+    encrypting = action == 'E'
+    is_binary = is_binary_file()
+    data = get_input(binary=is_binary)
+
+    print("* Circumference *")
+    circumference = input("Circumference? ")
+
+    print("{}crypting {} using Scytale cipher and circumference {}...".format('En' if encrypting else 'De',
+                                                                              data,
+                                                                              int(circumference))
+          )
+
+    output = (encrypt_scytale if encrypting else decrypt_scytale)(data, int(circumference))
+
+    set_output(output, is_binary)
+
+
+def run_railfence():
+    action = get_action()
+    encrypting = action == 'E'
+
+    data = get_input()
+
+    print("* Circumference *")
+    circumference = input("Circumference? ")
+
+    print("{}crypting {} using Railfence cipher and circumference {}...".format('En' if encrypting else 'De',
+                                                                              data,
+                                                                              circumference)
+          )
+
+    output = (encrypt_railfence if encrypting else decrypt_railfence)(data, int(circumference))
+
+    set_output(output)
+
+
 def run_merkle_hellman():
     action = get_action()
 
@@ -173,9 +220,11 @@ def run_suite():
     # This isn't the cleanest way to implement functional control flow,
     # but I thought it was too cool to not sneak in here!
     commands = {
-        'C': run_caesar,         # Caesar Cipher
-        'V': run_vigenere,       # Vigenere Cipher
-        'M': run_merkle_hellman  # Merkle-Hellman Knapsack Cryptosystem
+        'C': run_caesar,            # Caesar Cipher
+        'V': run_vigenere,          # Vigenere Cipher
+        'M': run_merkle_hellman,    # Merkle-Hellman Knapsack Cryptosystem
+        'S': run_scytale,           # Scytale Cipher
+        'R': run_railfence,         # Railfence Cipher
     }
     commands[tool]()
 
