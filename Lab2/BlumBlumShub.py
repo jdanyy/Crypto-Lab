@@ -1,5 +1,8 @@
 class BlumBlumShub:
 
+    def __init__(self) -> None:
+        BIT_NUM = 32
+
     def is_prime(self, num: int) -> bool:
 
         if num < 2 or num % 2 == 0:
@@ -33,11 +36,9 @@ class BlumBlumShub:
         return prime_num
 
     def generate_bit_array(self, seed: int, len_of_array: int) -> [int]:
-        
-        BIT_NUM = 32
 
-        p = self.generate_prime_number(BIT_NUM, 0)
-        q = self.generate_prime_number(BIT_NUM, p)
+        p = self.generate_prime_number(self.BIT_NUM, 0)
+        q = self.generate_prime_number(self.BIT_NUM, p)
 
         n = p * q 
 
