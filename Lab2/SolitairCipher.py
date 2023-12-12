@@ -111,8 +111,8 @@ class Solitair:
         return num_to_byte[0] + (num_to_byte[1] << 2) + (num_to_byte[2] << 4) + (num_to_byte[3] << 6)
         
         
-    def byte_stream_generator(self, length: int) -> bytes:
-        
+    def byte_stream_generator(self, deck, length: int) -> bytes:
+        self.initialize_deck(deck)
         keystream = self.key_stream_generator(4 * length)
         
         chunks = [keystream[i:i+4] for i in range(0, len(keystream), 4)]

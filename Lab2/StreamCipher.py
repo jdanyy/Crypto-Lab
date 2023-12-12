@@ -17,12 +17,10 @@ class StreamCipher:
         
         if self.algorithm == 'solitair':
             soli = Solitair()
-            soli.initialize_deck(self.seed)
-            return soli.byte_stream_generator(len_of_key)
+            return soli.byte_stream_generator(self.seed, len_of_key)
         
         if self.algorithm == 'blumblum':
             blum = BlumBlumShub()
-            
             return blum.generate_byte_stream(self.seed, len_of_key)
         
         return secrets.token_bytes(len_of_key)
