@@ -20,7 +20,7 @@ def receive_data(client_socket, streamCipher: StreamCipher):
 
         decrypted_message = streamCipher.decode_byte_array(message)
 
-        print(f'I got the following message: {decrypted_message.decode()}')
+        print(f'I got the following message: {decrypted_message.decode()}\n> Enter message: ')
 
         if message == 'BYE':
             break
