@@ -34,9 +34,6 @@ class MerkleHellmanKnapsack:
         if n:
             self.n = n
         
-        print('> The current length of the keypair is: {}'
-                  .format(self.n))
-        
         v = self.generate_super_increasing_list()
 
         q = self.get_a_random_higher_then(sum(v))
@@ -48,23 +45,15 @@ class MerkleHellmanKnapsack:
 
     def generate_public_key(self, private_key: tuple) -> bytes:
         v, q, r = private_key
-        return tuple([(vi * r) % q for vi in v])
+        return tuple((r * vi) % q for vi in v)
     
-    def encrypt_message(self, message: bytes, public_key: tuple) -> bytes:
-        
-        def encryp_byte(byte: bytes, public_key: tuple):
-            bits = byte_to_bits(byte)
-            return sum(a*b for a, b in zip(bits, public_key))
-        
-
-        chunk_size = len(public_key)
+    def encrypt_message(self, message: bytes, public_key: tuple) -> tuple[int, ...]:
         encrypted_message = []
 
-        for i in range(0, len(message), chunk_size):
-            chunk = message[i:i+chunk_size]
-
-            encrypted_chunk = [encryp_byte(byte, public_key) for byte in chunk]
-            encrypted_message.extend(encrypted_chunk)
+        for ch in message:
+            ch_bits = byte_to_bits(ch)
+            encrypted_ch = sum(a*b for a, b in zip(ch_bits, public_key))
+            encrypted_message.append(encrypted_ch)
 
         return encrypted_message
     

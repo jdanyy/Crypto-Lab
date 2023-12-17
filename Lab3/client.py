@@ -1,6 +1,6 @@
 import socket
 import sys
-import threading
+import json
 import argparse
 import random
 
@@ -29,7 +29,7 @@ class Client:
         self.streamCipher: StreamCipher
         
         self.private_key: tuple[tuple, int, int]
-        self.public_key: bytes
+        self.public_key: tuple
         self.other_client_public: bytes
         self.other_client_port: int
         self.is_listening: bool = True
@@ -56,23 +56,30 @@ class Client:
 
         self.private_key = private_key
         self.public_key = public_key
+        print(f'> My private key is: {private_key}')
+        print(f'> My public key is: {self.public_key}')
 
 
-    def decompose_key_server_message(self, message: str) -> str:
-        status, response = message.split('#')
+    def decompose_key_server_message(self, message: str) -> tuple:
+        try:
+            data = json.loads(message)
+        except json.JSONDecodeError as e:
+            print(f'Json decoder error: {e}')
+            status = 'ERROR'
+            response = 'JSon decoder error'
 
+        status = data['status']
+        response = data['message']
         return (status, response)
     
 
     def compose_key_server_request_messsage(self, type: str) -> str:
-        message = f'{type}#{self.port}#{self.public_key}'
+        data = {'type': type, 'port': self.port, 'public_key': self.public_key}
 
-        return message
-    
+        return json.dumps(data)
 
     def process_server_response(self, response: bytes) -> None: 
         decoded_response = response.decode()
-        print(decoded_response)
         status, response_message = self.decompose_key_server_message(decoded_response)
 
         if status == 'ERROR' or status == 'NOT_FOUND':
@@ -112,7 +119,8 @@ class Client:
 
     def send_public_key_request(self, port: int):
         try:
-            message = f'GET#{port}'
+            data = {'type': 'GET', 'port': port}
+            message = json.dumps(data)
             self.key_server_socket.sendall(message.encode())
         except socket.error as e:
             self._handle_socket_error(e)
@@ -173,33 +181,47 @@ class Client:
             self.own_socket.close()
             self.is_listening = False
 
+    def _send_and_encrypt_msg_knapsack(self, message: dict) -> None:
+        message_json = json.dumps(message)
+        encoded_msg = message_json.encode()
+        encrypted_msg = self.merkleHermanKnapsack.encrypt_message(encoded_msg, self.other_client_public)
+        encrypted_msg_json = json.dumps(encrypted_msg)
+        encrypted_msg_bytes = encrypted_msg_json.encode()
+        self.communication_socket.sendall(encrypted_msg_bytes)
+
+    def _receiv_and_decrypt_msg_knapsack(self) -> str:
+        response = self.communication_socket.recv(1024)
+        decoded_msg = response.decode()
+        deserialize_encrypted_msg = json.loads(decoded_msg)
+        decrypted_msg = self.merkleHermanKnapsack.decrypt_message(deserialize_encrypted_msg, self.private_key)
+        decoded_msg = decrypted_msg.decode()
+        deserialize_msg = json.loads(decoded_msg)
+
+        return deserialize_msg['message']
+
     def connector_keypair_exchange(self) -> None:
         # First send handshake with my port
-        message = f'HELLO#{self.port}'.encode()
-        encrypted_msg = self.merkleHermanKnapsack.encrypt_message(message, self.other_client_public)
-        self.communication_socket.send(encrypted_msg)
+        message = { 'message': f'HELLO#{self.port}' }
+        self._send_and_encrypt_msg_knapsack(message)
         print('> [Client] - HandShake message sent')
 
         # Wait for ACK
-        ack_response = self.communication_socket.recv(1024)
-        decrypted_msg = self.merkleHermanKnapsack.decrypt_message(ack_response, self.private_key)
-        print(f'> [Client] - Other client reponse: {decrypted_msg.decode()}')
+        response = self._receiv_and_decrypt_msg_knapsack()
+        print(f'> [Client] - Other client reponse: {response}')
 
         # Generate half of the deck
         fist_half_random_deck = random.sample(range(FIRST_START_RANGE, FIRST_END_RANGE + 1), DECK_LENGTH)
         # Send the half of the deck
-        encoded_half_deck = convert_list_of_int_to_string(fist_half_random_deck).encode()
-        encrypted_msg = self.merkleHermanKnapsack.encrypt_message(encoded_half_deck, self.other_client_public)
-        self.communication_socket.send(encrypted_msg)
+        message = { 'message': fist_half_random_deck }
+        self._send_and_encrypt_msg_knapsack(message)
         print(f'> [Client] - Half of the deck send!')
 
         # Receive other half of the deck
-        second_half_response = self.communication_socket.recv(1024)
-        decrypted_second_half_deck = self.merkleHermanKnapsack.decrypt_message(second_half_response, self.private_key).decode()
+        second_half_random_deck = self._receiv_and_decrypt_msg_knapsack()
         print(f'> [Client] - Other half of the deck received!')
 
         # Compose common secret
-        common_deck = generate_common_secret(fist_half_random_deck, decrypted_second_half_deck)
+        common_deck = generate_common_secret(fist_half_random_deck, second_half_random_deck)
         self.streamCipher = StreamCipher(common_deck)
         print(f'> [Client] - Stream Cipher initialized with common key')
         print(f'> Deck - {common_deck}')
@@ -207,44 +229,42 @@ class Client:
     
     def receiver_keypair_exchange(self) -> None:
         # First receive the hello message from the client
-        message = self.communication_socket.recv(1024).decode()
-        decrypted_message = self.merkleHermanKnapsack.decrypt_message(message, self.private_key)
-        _, port = decrypted_message.split('#')
+        message = self._receiv_and_decrypt_msg_knapsack()
+        _, port = message.split('#')
         print(f'> [Client] - Hello message from client: {port}')
 
         # Get the client public key from key server
         self.get_other_client_public_key(int(port))
 
         # Send ok Ack to hello message
-        message = 'OK-Port And public key received'.encode()
-        encrypted_message = self.merkleHermanKnapsack.encrypt_message(message, self.other_client_public)
-        self.communication_socket.sendall(encrypted_message)
+        message = { 'message': 'OK-Port And public key received' }
+        self._send_and_encrypt_msg_knapsack(message)
 
         # Generate half deck
         second_half_random_deck = random.sample(range(FIRST_END_RANGE, SECOND_END_RANGE + 1), FIRST_END_RANGE)
         # Receive the other half deck
-        decoded_first_half = self.communication_socket.recv(1024)
-        decrypted_first_half = self.merkleHermanKnapsack.decrypt_message(decoded_first_half, self.private_key).decode()
+        first_half_random_deck = self._receiv_and_decrypt_msg_knapsack()
         print('> [Client] - First half of deck received')
 
-        first_half_deck_numbers = convert_string_to_list_of_int(decrypted_first_half)
         # Send the other hald 
-        encoded_second_half = convert_list_of_int_to_string(second_half_random_deck).encode()
-        encrypted_second_half = self.merkleHermanKnapsack.encrypt_message(encoded_second_half, self.other_client_public)
-        self.communication_socket.sendall(encrypted_second_half)
+        message = { 'message': second_half_random_deck }
+        self._send_and_encrypt_msg_knapsack(message)
         print('> [Client] - Second half of the deck sent')
 
         # Compose common secret
-        common_deck = generate_common_secret(first_half_deck_numbers, second_half_random_deck)
+        common_deck = generate_common_secret(first_half_random_deck, second_half_random_deck)
         self.streamCipher = StreamCipher(common_deck)
         print(f'> [Client] - Stream Cipher initialized with common key')
-        print(f'> Deck - {common_deck}')
 
     def send_message(self) -> None:
-        message = input('\n> Enter message: ')
+        message = input('> [You]: ')
         encoded_message = message.encode()
         encrypted_message = self.streamCipher.encode_byte_array(encoded_message)
         self.communication_socket.sendall(encrypted_message)
+
+        if message == 'bye':
+            self._clean_up_active_sockets()
+            sys.exit()
 
     def communication(self) -> None:
         while True:
@@ -254,7 +274,10 @@ class Client:
             response = self.communication_socket.recv(1024)
             decrypted_messsage = self.streamCipher.decode_byte_array(response)
             raw_message = decrypted_messsage.decode()
-            print(f'> [Other client] - {raw_message}')
+            print(f'> [Your peer] - {raw_message}')
+
+            if raw_message == 'bye':
+                break
 
             if self.is_listening:
                 self.send_message()
@@ -282,6 +305,7 @@ class Client:
                 self.receiver_keypair_exchange()
 
             self.communication()
+            self._clean_up_active_sockets()
 
         except socket.error as e:
             self._handle_socket_error(e)

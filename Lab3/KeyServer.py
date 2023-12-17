@@ -17,22 +17,31 @@ class KeyServer:
         return self.public_keys[key]
     
     def compose_client_response(self, status: str, message: str) -> str:
-
-        return f'{status}#{message}'
+        data = {'status': status, 'message': message}
+        
+        return json.dumps(data)
     
     def process_client_message(self, message: str, client_id: str) -> str:
                 
         request_parts = message.split('#')
-        print(f'>[{client_id}] - Client make an {request_parts[0]} request')
-        if request_parts[0] == "ADD":
-            key = request_parts[1]
-            value = request_parts[2]
+        try:
+            request_parts = json.loads(message)
+        except json.JSONDecodeError as e:
+            print(f'Json decoder error: {e}')
+            return self.compose_client_response('ERROR', 'Invalid request')
+        
+        request_type = request_parts.get('type')
+        print(f'>[{client_id}] - Client make an {request_type} request')
+        if request_type == "ADD":
+            key = request_parts['port']
+            value = request_parts['public_key']
+            print(f'> {key} client public key: {value}, type of key: {type(value[0])}')
 
             self.add_key(key, value)
             
             return self.compose_client_response('CREATED', 'Public key stored')
-        elif request_parts[0] == "GET":
-            key = request_parts[1]
+        elif request_type == "GET":
+            key = request_parts['port']
             if key not in self.public_keys.keys():
                 return self.compose_client_response('NOT_FOUND', 'Client not found')
 
