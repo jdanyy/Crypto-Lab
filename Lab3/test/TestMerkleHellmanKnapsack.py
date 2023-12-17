@@ -1,7 +1,7 @@
 import unittest
 
-from src.merkle_hellman_knapsack import MerkleHellmanKnapsack
-from src.utils import coprime
+from merkle_hellman_knapsack import MerkleHellmanKnapsack
+from utils import coprime
 
 class TestMerkleHelmanKnapsack(unittest.TestCase):
 
