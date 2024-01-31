@@ -6,16 +6,24 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -27,8 +35,21 @@ public class TLSClient {
 
 
     public static void main(String[] args) {
+        SSLContext context;
+
+        try {
+            context = SSLContext.getInstance("TLS");
+            context.init(null, new TrustManager[]{ new CustomTrustManager() }, new SecureRandom());
+        } catch (NoSuchAlgorithmException e) {
+            log.error("No such algorithm error", e);
+            throw new Error(e);
+        } catch (KeyManagementException e) {
+            log.error("Key manager exception", e);
+            throw new Error(e);
+        }
+
         log.info("Main started");
-        try (Socket socket = SSLSocketFactory.getDefault().createSocket(BNR_HOST, SERVER_PORT)) {
+        try (Socket socket = context.getSocketFactory().createSocket(BNR_HOST, SERVER_PORT)) {
             printCertificates(socket);
 
             var outputStream = socket.getOutputStream();
@@ -62,6 +83,8 @@ public class TLSClient {
                     }
                 }
             }
+        } catch (SSLPeerUnverifiedException e) {
+          log.error("Server is not verified", e);
         } catch (UnknownHostException e) {
             log.error("Unknown Error: {}", e.getMessage());
         } catch (IOException e) {
@@ -96,5 +119,25 @@ public class TLSClient {
         }
 
         System.out.println("-".repeat(50));
+    }
+
+    private static class CustomTrustManager implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s)
+            throws CertificateException {
+
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s)
+            throws CertificateException {
+
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
     }
 }

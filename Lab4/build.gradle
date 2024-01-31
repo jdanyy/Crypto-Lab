@@ -29,3 +29,15 @@ compileJava {
 application {
     mainClassName = 'edu.bbte.crypto.jdim2141.TLSClient'
 }
+
+task runClient(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'edu.bbte.crypto.jdim2141.TLSClient'
+}
+
+task runServer(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'edu.bbte.crypto.jdim2141.TLSServer'
+}
+
+
