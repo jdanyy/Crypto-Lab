@@ -6,5 +6,6 @@ build/
 *.key
 *.jks
 *.p12
+*.srl
 
 

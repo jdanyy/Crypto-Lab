@@ -19,12 +19,12 @@ import javax.net.ssl.SSLServerSocketFactory;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class TLSServer {
+public class SelfSignedTLSServer {
 
     private static final char[] PASSWORD = "password".toCharArray();
     private static final Integer SERVER_PORT = 443;
     private static final String INPUT_HTML = "bnr_input.html";
-    private static final String KEYSTORE = "BNR_keystore.jks";
+    private static final String KEYSTORE = "server_keystore.jks";
 
     public static void main(String[] args) {
         log.info("Server initialization started...");
@@ -66,7 +66,6 @@ public class TLSServer {
             log.error("Key store exception", e);
         }
     }
-
     private static void handleClientConnection(Socket clientSocket, String htmlContent) throws IOException {
         try (var inReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
             var out = clientSocket.getOutputStream();
@@ -75,7 +74,7 @@ public class TLSServer {
             while(!(line = inReader.readLine()).isEmpty()) {
                 log.info(line);
             }
-            log.debug("Reading ended");
+
             String response = "HTTP/1.1 200 OK\r\n" +
                 "Content-Type: text/html\r\n" +
                 "Content-Length: " + htmlContent.getBytes().length + "\r\n" +
@@ -100,4 +99,6 @@ public class TLSServer {
             throw new RuntimeException(e);
         }
     }
+
 }
+

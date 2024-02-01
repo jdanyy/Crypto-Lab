@@ -39,7 +39,8 @@ public class TLSClient {
 
         try {
             context = SSLContext.getInstance("TLS");
-            context.init(null, new TrustManager[]{ new CustomTrustManager() }, new SecureRandom());
+            context.init(null, null, new SecureRandom());
+            /*context.init(null, new TrustManager[]{ new CustomTrustManager() }, new SecureRandom());*/
         } catch (NoSuchAlgorithmException e) {
             log.error("No such algorithm error", e);
             throw new Error(e);
@@ -50,11 +51,11 @@ public class TLSClient {
 
         log.info("Main started");
         try (Socket socket = context.getSocketFactory().createSocket(BNR_HOST, SERVER_PORT)) {
+            log.info("Socket connection made");
             printCertificates(socket);
 
             var outputStream = socket.getOutputStream();
 
-            log.info("Socket connection made");
             PrintWriter printWriter = new PrintWriter(outputStream, true, StandardCharsets.UTF_8);
             printWriter.println("GET /Home.aspx HTTP/1.1");
             printWriter.println("Host: " + BNR_HOST);
@@ -83,6 +84,9 @@ public class TLSClient {
                     }
                 }
             }
+            log.info("-".repeat(50));
+            log.info("HTML got");
+            log.info("Client is stopping");
         } catch (SSLPeerUnverifiedException e) {
           log.error("Server is not verified", e);
         } catch (UnknownHostException e) {
@@ -90,7 +94,6 @@ public class TLSClient {
         } catch (IOException e) {
             log.error("Io exception", e);
         }
-        log.error("HTML got");
     }
 
     private static void printCertificates(Socket socket) throws SSLPeerUnverifiedException {
@@ -121,7 +124,7 @@ public class TLSClient {
         System.out.println("-".repeat(50));
     }
 
-    private static class CustomTrustManager implements X509TrustManager {
+/*    private static class CustomTrustManager implements X509TrustManager {
 
         @Override
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s)
@@ -139,5 +142,5 @@ public class TLSClient {
         public X509Certificate[] getAcceptedIssuers() {
             return null;
         }
-    }
+    }*/
 }

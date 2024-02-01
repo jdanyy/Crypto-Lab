@@ -40,4 +40,14 @@ task runServer(type: JavaExec) {
     mainClass = 'edu.bbte.crypto.jdim2141.TLSServer'
 }
 
+task runSelfSignedServer(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'edu.bbte.crypto.jdim2141.SelfSignedTLSServer'
+}
+
+task runSelfSignedClient(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'edu.bbte.crypto.jdim2141.SelfSignedTLSClient'
+}
+
 
