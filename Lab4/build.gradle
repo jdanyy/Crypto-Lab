@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    runtimeOnly 'ch.qos.logback:logback-classic:1.4.11'
+
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+compileJava {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+application {
+    mainClassName = 'edu.bbte.crypto.jdim2141.TLSClient'
+}
+
+task runClient(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'edu.bbte.crypto.jdim2141.TLSClient'
+}
+
+task runServer(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'edu.bbte.crypto.jdim2141.TLSServer'
+}
+
+task runSelfSignedServer(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'edu.bbte.crypto.jdim2141.SelfSignedTLSServer'
+}
+
+task runSelfSignedClient(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'edu.bbte.crypto.jdim2141.SelfSignedTLSClient'
+}
+
+

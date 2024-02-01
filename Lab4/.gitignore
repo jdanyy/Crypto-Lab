@@ -1,0 +1,11 @@
+.idea/
+.gradle/
+.envrc
+build/
+*.csr
+*.key
+*.jks
+*.p12
+*.srl
+
+
